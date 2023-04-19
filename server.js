@@ -47,7 +47,7 @@ app.get('/weather', (request,response,next)=>{
     let locaLat = request.query.lat;
     let localLon = request.query.lon;
     let localCity = request.query.city;
-    let returnedCity = weatherData.find(city => city.lat === locaLat);
+    let returnedCity = weatherData.find(city => city.city_name === localCity);
     //console.log(returnedCity);
     
     let dataToSend = new Weather(returnedCity);
@@ -55,8 +55,6 @@ app.get('/weather', (request,response,next)=>{
     console.log(dataToSend.myWeatherData);
 
     // let returnedWeather = weatherData.find(weather => weather.data.description === )
-
-    
 
     response.status(200).send(dataToSend.myWeatherData);
      }catch(error){
