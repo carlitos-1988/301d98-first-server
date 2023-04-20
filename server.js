@@ -5,6 +5,7 @@ require('dotenv').config();
 const cors = require('cors');
 let data = require('./data/petdata');
 let weatherData = require('./data/weather');
+const axios = require('axios');
 
 
 
@@ -41,22 +42,26 @@ app.get('/hello', (request, response)=>{
     response.status(200).send(`Hello ${firstName} ${lastName}, welcome to my server`)
 })
 //Card One location
-app.get('/weather', (request,response,next)=>{
+app.get('/weather', async(request,response,next)=>{
      try{
-    console.log(weatherData[0].city_name);
-    let locaLat = request.query.lat;
-    let localLon = request.query.lon;
+    //console.log(weatherData[0].city_name);
+    // let locaLat = request.query.lat;
+    // let localLon = request.query.lon;
     let localCity = request.query.city;
-    let returnedCity = weatherData.find(city => city.city_name === localCity);
-    //console.log(returnedCity);
+    //let returnedCity = weatherData.find(city => city.city_name === localCity);
+
+    let localUrl = `https://api.weatherbit.io/v2.0/forecast/daily?city=${localCity}&country=US&key=${process.env.WEATHERBIT_API_KEY}`
+
+    let returnedWeather = await axios.get(localUrl);
     
-    let dataToSend = new Weather(returnedCity);
+    let dataToSend = new Weather(returnedWeather.data);
     dataToSend.generateWeatherData();
-    console.log(dataToSend.myWeatherData);
+    dataToSend.generateForCity();
+    //console.log(dataToSend.myWeatherData);
 
     // let returnedWeather = weatherData.find(weather => weather.data.description === )
 
-    response.status(200).send(dataToSend.myWeatherData);
+    response.status(200).send(dataToSend.cityWeatherData);
      }catch(error){
         next(error);
      }
@@ -68,28 +73,31 @@ class Weather{
     constructor(weatherObj){
         this.cityName = weatherObj.city_name,
         this.lattitude = weatherObj.lon,
-        this.longitude = weatherObj.lat,
+        this.longitude = weatherObj.lat
         this.data = weatherObj.data
     }
     myWeatherData =[];
+
+    cityWeatherData =[];
+
+    generateForCity(){
+        this.cityWeatherData = this.myWeatherData.reduce((allweather, dayweather) =>{
+            allweather.push({"description" : `Low of ${dayweather.lowtemp}, high of ${dayweather.hightemp} with ${dayweather.description}`,'date' : dayweather.date})
+            return allweather;
+        },[]);
+    }
 
     generateWeatherData(){
         this.myWeatherData = this.data.reduce((allweather,dayweather)=>{
             // console.log(dayweather.datetime);
             // console.log(dayweather.high_temp);
             // console.log(dayweather.low_temp);
-            allweather.push({'date':dayweather.datetime},{'hightemp': dayweather.high_temp}, {'lowtemp': dayweather.low_temp});
+            allweather.push({'date':dayweather.datetime ,'hightemp': dayweather.max_temp,'lowtemp': dayweather.min_temp, "description":dayweather.weather.description});
             return allweather;
         },[]);
     }
 }
 
-class Forecast{
-    constructor(weatherObj){
-        this.date = weatherObj.datetime,
-        this.description = weatherObj.description
-    }
-}
 
 
 
@@ -114,9 +122,35 @@ class Pet {
         this.breed = petObj.breed
     }
 }
-//TODO: Look at lab start to get started with query 
+//TODO: Phot end point  
+
+app.get('/photos', async(request, response, next) =>{
+    try{
+        //generate variable for key value inside the query
+        let myLocalCity = request.query.city;
+        //url for the api to be queried 
+        let url = `https://api.unsplash.com/search/photos?client_id=${process.env.UNSPLASH_API_KEY}&query=${myLocalCity}`;
+
+        let photosFromAxios = await axios.get(url);
+        //the data will have to be mapped through every object in the class 
+
+        //loops through an array of objects and creates a Photo object based only on the needed info from the data 
+        let dataToSend = photosFromAxios.data.results.map(obj = new Photo(obj));
 
 
+        response.status(200).send(dataToSend);
+    }catch(error){
+        next(error);
+    }
+})
+
+class Photo{
+    constructor(picObj){
+        this.src = picObj.urls.regular;
+        this.alt = picObj.alt_description;
+        this.userName = picObj.user.name;
+    }
+}
 
 
 
