@@ -21,7 +21,7 @@ async function getMovies(request,response,next){
 class MovieforCity {
     constructor(movieObj) {
       this.id = movieObj.id;
-      this.image = `https://image.tmdb.org/t/p/w500${movieObj.poster_path}`;
+      this.image = `https://image.tmdb.org/t/p/w400${movieObj.poster_path}`;
       this.title = movieObj.title;
       this.overview = movieObj.overview;
     }

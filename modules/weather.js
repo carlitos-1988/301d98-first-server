@@ -4,12 +4,12 @@ const axios = require("axios");
 async function getWeather(request, response,next){
     try {
         //console.log(weatherData[0].city_name);
-        // let locaLat = request.query.lat;
-        // let localLon = request.query.lon;
-        let localCity = request.query.city;
+        let locaLat = request.query.lat;
+        let localLon = request.query.lon;
+        //let localCity = request.query.city;
         //let returnedCity = weatherData.find(city => city.city_name === localCity);
     
-        let localUrl = `https://api.weatherbit.io/v2.0/forecast/daily?city=${localCity}&country=US&key=${process.env.WEATHERBIT_API_KEY}`;
+        let localUrl = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${locaLat}&lon=${localLon}&key=${process.env.WEATHERBIT_API_KEY}`;
     
         let returnedWeather = await axios.get(localUrl);
     
