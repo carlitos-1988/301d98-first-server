@@ -1,20 +1,39 @@
 'use strict';
 const axios = require("axios");
 
+let cache ={};
+
 async function getPhotos(request,response, next){
     try {
-        //generate variable for key value inside the query
         let myLocalCity = request.query.city;
-        //url for the api to be queried
-        let url = `https://api.unsplash.com/search/photos?client_id=${process.env.UNSPLASH_API_KEY}&query=${myLocalCity}`;
+        let key = `${myLocalCity}-photos`;
+        
+        if(cache[key] && (Date.now() - cache[key].timeStamp) < 8.64e+7){
+            console.log('cache was hit!', cache);
+            response.status(200).send(cache[key].data)
+        
+        
+        }else{
+            console.log('cache was missed');
+
+            //generate variable for key value inside the query
+            //url for the api to be queried
+            let url = `https://api.unsplash.com/search/photos?client_id=${process.env.UNSPLASH_API_KEY}&query=${myLocalCity}`;
+            
+            //the data will have to be mapped through every object in the class 
+            //loops through an array of objects and creates a Photo object based only on the needed info from the data
+            let photosFromAxios = await axios.get(url);
+            let dataToSend = photosFromAxios.data.results.map((obj = new Photo(obj)));
+
+            cache[key] = {
+                data: dataToSend,
+                timeStamp: Date.now()
+            }
+
+            response.status(200).send(dataToSend);
+
+        }
     
-        let photosFromAxios = await axios.get(url);
-        //the data will have to be mapped through every object in the class
-    
-        //loops through an array of objects and creates a Photo object based only on the needed info from the data
-        let dataToSend = photosFromAxios.data.results.map((obj = new Photo(obj)));
-    
-        response.status(200).send(dataToSend);
       } catch (error) {
         next(error);
       }

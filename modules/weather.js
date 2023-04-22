@@ -1,26 +1,47 @@
 'use strict';
 const axios = require("axios");
 
+let cache = {};
+
 async function getWeather(request, response,next){
     try {
         //console.log(weatherData[0].city_name);
-        let locaLat = request.query.lat;
+        let localLat = request.query.lat;
         let localLon = request.query.lon;
-        //let localCity = request.query.city;
-        //let returnedCity = weatherData.find(city => city.city_name === localCity);
-    
-        let localUrl = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${locaLat}&lon=${localLon}&key=${process.env.WEATHERBIT_API_KEY}`;
-    
-        let returnedWeather = await axios.get(localUrl);
-    
-        let dataToSend = new Weather(returnedWeather.data);
-        dataToSend.generateWeatherData();
-        dataToSend.generateForCity();
-        //console.log(dataToSend.myWeatherData);
-    
-        // let returnedWeather = weatherData.find(weather => weather.data.description === )
-    
-        response.status(200).send(dataToSend.cityWeatherData);
+
+        let key = `${localLat}-${localLon}-weather`;
+
+        if(cache[key] && (Date.now() - cache[key].timeStamp) < 8.64e+7){
+
+            //console.log('weather cashe was hit', cache);
+            response.status(200).send(cache[key].data)
+
+
+        }else{
+            //console.log('cache was missed');
+
+            //let localCity = request.query.city;
+            //let returnedCity = weatherData.find(city => city.city_name === localCity);
+        
+            let localUrl = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${localLat}&lon=${localLon}&key=${process.env.WEATHERBIT_API_KEY}`;
+        
+            let returnedWeather = await axios.get(localUrl);
+        
+            let dataToSend = new Weather(returnedWeather.data);
+            dataToSend.generateWeatherData();
+            dataToSend.generateForCity();
+            //console.log(dataToSend.myWeatherData);
+
+            //console.log('made it to the last part of else ', dataToSend.cityWeatherData);
+
+            cache[key] = {
+                data: dataToSend.cityWeatherData,
+                timeStamp: Date.now()
+            }
+            response.status(200).send(dataToSend.cityWeatherData);
+
+        }
+
       } catch (error) {
         next(error);
       }
